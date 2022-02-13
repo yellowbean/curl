@@ -62,8 +62,8 @@ module Network.Curl
           -- posting requests.
        , curlMultiPost       -- :: URLString -> [CurlOption] -> [HttpPost] -> IO ()
        , curlPost            -- :: URLString -> [String] -> IO ()
-
-          -- 
+       , curlPostString      -- :: URLString -> [CurlOption] -> IO (CurlCode, String)
+          --
        , getResponseCode     -- :: Curl -> IO Int
 
           -- supporting cast
@@ -412,8 +412,9 @@ curlPost s ps = initialize >>= \ h -> do
   perform h
   return ()
 
+-- | same as `curlPost` but return a response in string
 curlPostString :: URLString -> [CurlOption] -> IO (CurlCode, String)
-curlPostString s ps = initialize >>= \ h -> do
+curlPostString s os = initialize >>= \ h -> do
   ref <- newIORef []
 
   setopt h (CurlFailOnError True)
@@ -423,7 +424,7 @@ curlPostString s ps = initialize >>= \ h -> do
   setopt h (CurlURL s)
 
   setopt h (CurlWriteFunction (gatherOutput ref))
-  mapM_ (setopt h) ps
+  mapM_ (setopt h) os
   rc <- perform h
   lss <- readIORef ref
   return (rc, concat $ reverse lss)
